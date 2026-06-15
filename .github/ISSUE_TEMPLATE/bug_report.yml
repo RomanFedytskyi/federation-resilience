@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a problem with federation-resilience
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug! Please provide a minimal reproduction.
+  - type: input
+    id: version
+    attributes:
+      label: federation-resilience version
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: mf-version
+    attributes:
+      label: "@module-federation/enhanced version"
+      placeholder: e.g. 2.5.1
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host framework
+      options: [React, Vue, Angular, Svelte, Solid, Bare ESM, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the actual vs. expected behaviour and any RemoteLoadError details.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Steps, a code snippet, or a link to a repo. Tests run with zero network — a mock-remote repro is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: Node version, bundler (webpack/Rspack/Vite/Rollup/Metro), browser

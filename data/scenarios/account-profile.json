@@ -1,0 +1,28 @@
+{
+  "name": "account-profile-permanent-outage",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See account-profile.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "account/Profile",
+  "entryUrl": "https://cdn.shop.example/account/remoteEntry.js",
+  "fallbackId": "account-stable/Profile",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 3,
+    "backoff": {
+      "baseMs": 150,
+      "capMs": 3000,
+      "factor": 2,
+      "jitter": "equal"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "fail",
+      "latencyMs": 230
+    }
+  ],
+  "fallback": {
+    "outcome": "succeed",
+    "latencyMs": 135
+  }
+}

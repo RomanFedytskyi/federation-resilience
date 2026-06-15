@@ -1,0 +1,19 @@
+{
+  "name": "storefront-checkout-cart-incident",
+  "synthetic": true,
+  "_provenance": "EXAMPLE data modeled on a typical e-commerce storefront (host 'storefront' loading the 'checkout/Cart' micro-frontend). Latencies are illustrative, not measured from a production system. To publish real numbers, set synthetic=false and use measured RUM values per data/README.md.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://cdn.storefront.example/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 3000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": { "baseMs": 120, "capMs": 2000, "factor": 2, "jitter": "full" }
+  },
+  "attempts": [
+    { "outcome": "fail",    "latencyMs": 210 },
+    { "outcome": "timeout", "latencyMs": 3000 },
+    { "outcome": "succeed", "latencyMs": 165 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 140 }
+}

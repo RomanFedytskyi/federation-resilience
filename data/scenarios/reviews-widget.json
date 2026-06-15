@@ -1,0 +1,32 @@
+{
+  "name": "reviews-widget-transient-recovery",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See reviews-widget.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "reviews/Widget",
+  "entryUrl": "https://cdn.shop.example/reviews/remoteEntry.js",
+  "fallbackId": "reviews-stable/Widget",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 3,
+    "backoff": {
+      "baseMs": 80,
+      "capMs": 1200,
+      "factor": 2,
+      "jitter": "full"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "fail",
+      "latencyMs": 160
+    },
+    {
+      "outcome": "succeed",
+      "latencyMs": 130
+    }
+  ],
+  "fallback": {
+    "outcome": "succeed",
+    "latencyMs": 100
+  }
+}

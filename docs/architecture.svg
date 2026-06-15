@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">federation-resilience — resilient remote load lifecycle</title>
+  <desc id="d">A request dot travels the primary lane: Host shell to Attempt 1 (fails), to cache-busted backoff, to Attempt 2 (fails), to a pinned fallback, ending at Host stays alive. Each box lights as the dot arrives. A parallel idle-prefetch lane warms the fallback.</desc>
+  <defs>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="dotA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#bfdbff"/><stop offset="100%" stop-color="#3b82f6"/>
+    </radialGradient>
+    <radialGradient id="dotP" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e9d5ff"/><stop offset="100%" stop-color="#a855f7"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .bg{fill:#0b1020}
+    .box{rx:12;stroke-width:1.5}
+    .host{fill:#14233f;stroke:#3b82f6}.ok{fill:#0f2e22;stroke:#22c55e}
+    .bad{fill:#2e1620;stroke:#ef4444}.wait{fill:#2a2410;stroke:#f59e0b}.fb{fill:#1d1633;stroke:#a855f7}
+    .label{fill:#e6ecff;font-size:15px;font-weight:600}
+    .sub{fill:#93a4c8;font-size:10.5px}
+    .tag{fill:#c7d2fe;font-size:11px;font-weight:700;letter-spacing:.04em}
+    .edge{stroke:#33406b;stroke-width:2;fill:none}.edgep{stroke:#3a2a55;stroke-width:2;fill:none}
+    .title{fill:#f8fafc;font-size:20px;font-weight:800}.footer{fill:#6b7aa3;font-size:11px}
+  </style>
+
+  <rect class="bg" x="0" y="0" width="980" height="470"/>
+  <text class="title" x="28" y="42">federation-resilience — never let one failed remote take down the shell</text>
+
+  <!-- ===================== PRIMARY LANE ===================== -->
+  <text class="tag" x="28" y="84">PRIMARY LOAD PATH</text>
+  <path class="edge" stroke-dasharray="6 8" d="M 100 153 H 876">
+    <animate attributeName="stroke-dashoffset" values="0;-28" dur="1.1s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Host shell — always lit -->
+  <g>
+    <rect class="box host" x="40" y="118" width="120" height="70"/>
+    <text class="label" x="100" y="148" text-anchor="middle">Host shell</text>
+    <text class="sub"   x="100" y="168" text-anchor="middle">loadResilient()</text>
+  </g>
+  <!-- Attempt 1 — arrives 0.15 -->
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.14;0.16;1"/>
+    <rect class="box bad" x="200" y="118" width="120" height="70"/>
+    <text class="label" x="260" y="144" text-anchor="middle">Attempt 1</text>
+    <text class="sub"   x="260" y="164" text-anchor="middle">loadRemote &#8594; 500 &#10007;</text>
+  </g>
+  <!-- Backoff + bust — arrives 0.32 -->
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.31;0.33;1"/>
+    <rect class="box wait" x="346" y="118" width="138" height="70"/>
+    <text class="label" x="415" y="142" text-anchor="middle">Backoff + bust</text>
+    <text class="sub"   x="415" y="160" text-anchor="middle">wait 2&#8319; &#183; jitter</text>
+    <text class="sub"   x="415" y="175" text-anchor="middle">?__mf_bust=&#8230;</text>
+  </g>
+  <!-- Attempt 2 — arrives 0.49 -->
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.48;0.50;1"/>
+    <rect class="box bad" x="510" y="118" width="120" height="70"/>
+    <text class="label" x="570" y="144" text-anchor="middle">Attempt 2</text>
+    <text class="sub"   x="570" y="164" text-anchor="middle">fresh URL &#8594; &#10007;</text>
+  </g>
+  <!-- Pinned fallback — arrives 0.66 -->
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.65;0.67;1"/>
+    <rect class="box fb" x="656" y="118" width="128" height="70"/>
+    <text class="label" x="720" y="144" text-anchor="middle">Pinned fallback</text>
+    <text class="sub"   x="720" y="164" text-anchor="middle">stable remote/module &#10003;</text>
+  </g>
+  <!-- Host stays alive — arrives 0.83 -->
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.82;0.84;1"/>
+    <rect class="box ok" x="810" y="118" width="132" height="70"/>
+    <text class="label" x="876" y="142" text-anchor="middle" font-size="14">Host stays alive</text>
+    <text class="sub" x="876" y="160" text-anchor="middle">no crash</text>
+    <text x="876" y="180" text-anchor="middle" font-size="15" fill="#22c55e">&#9829; rendered
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="1.6s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- primary dot: travels + dwells at each box, arriving exactly as it lights -->
+  <circle r="6.5" fill="url(#dotA)" filter="url(#glow)" opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;0.03;0.85;0.92;1"/>
+    <animateMotion dur="12s" repeatCount="indefinite" calcMode="linear"
+      path="M 100 153 H 260 H 415 H 570 H 720 H 876"
+      keyPoints="0;0.2;0.2;0.4;0.4;0.6;0.6;0.8;0.8;1;1"
+      keyTimes="0;0.15;0.20;0.32;0.37;0.49;0.54;0.66;0.71;0.83;1"/>
+  </circle>
+
+  <line x1="28" y1="258" x2="952" y2="258" stroke="#1f2b4a" stroke-width="1"/>
+
+  <!-- ===================== PREFETCH LANE ===================== -->
+  <text class="tag" x="28" y="300" fill="#d8b4fe">IDLE PREFETCH PATH &#183; non-interfering</text>
+  <path class="edgep" stroke-dasharray="6 8" d="M 100 368 H 670">
+    <animate attributeName="stroke-dashoffset" values="0;-28" dur="1.1s" repeatCount="indefinite"/>
+  </path>
+  <g>
+    <rect class="box host" x="40" y="334" width="120" height="68" stroke="#a855f7"/>
+    <text class="label" x="100" y="362" text-anchor="middle">requestIdle</text>
+    <text class="sub"   x="100" y="382" text-anchor="middle">Callback()</text>
+  </g>
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.31;0.33;1"/>
+    <rect class="box fb" x="320" y="334" width="140" height="68"/>
+    <text class="label" x="390" y="362" text-anchor="middle">Warm fallback</text>
+    <text class="sub"   x="390" y="382" text-anchor="middle">populate import cache</text>
+  </g>
+  <g opacity="0.16">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0.16;0.16;1;1" keyTimes="0;0.65;0.67;1"/>
+    <rect class="box ok" x="600" y="334" width="140" height="68"/>
+    <text class="label" x="670" y="362" text-anchor="middle">Instant failover</text>
+    <text class="sub"   x="670" y="382" text-anchor="middle">served from cache</text>
+  </g>
+  <circle r="5.5" fill="url(#dotP)" filter="url(#glow)" opacity="0">
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;0.03;0.68;0.74;1"/>
+    <animateMotion dur="12s" repeatCount="indefinite" calcMode="linear"
+      path="M 100 368 H 390 H 670"
+      keyPoints="0;0.5;0.5;1;1" keyTimes="0;0.32;0.37;0.66;1"/>
+  </circle>
+
+  <text class="footer" x="28" y="448">Retry &#183; exponential backoff &#183; cache-bust (defeats Chromium's sticky failed-import cache) &#183; deterministic fallback &#183; idle prefetch &#183; telemetry hooks</text>
+</svg>

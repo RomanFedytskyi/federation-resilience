@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / discussion
+    url: https://github.com/RomanFedytskyi/federation-resilience/discussions
+    about: Ask questions and discuss usage here.
+  - name: Security report
+    url: https://github.com/RomanFedytskyi/federation-resilience/security/advisories/new
+    about: Report vulnerabilities privately (see SECURITY.md).

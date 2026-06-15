@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use federation-resilience in your work, please cite it as below."
+title: "federation-resilience: a resilient, telemetry-instrumented loader for Module Federation remotes"
+abstract: >-
+  A framework-agnostic library that wraps Module Federation 2.0's loadRemote with
+  bounded retries, cache-busted exponential backoff (to defeat Chromium's sticky
+  failed-dynamic-import cache), deterministic pinned fallback, idle prefetch, and
+  generic telemetry hooks, so a single failed remote micro-frontend cannot crash
+  the host shell. Five formal resilience properties are verified by fixed-seed
+  property tests and shipped as runtime-checkable functions.
+type: software
+version: 0.1.0
+date-released: 2026-06-14
+license: MIT
+keywords:
+  - module-federation
+  - micro-frontends
+  - resilient-loader
+  - loadRemote
+  - error-recovery
+  - retry
+  - exponential-backoff
+  - cache-bust
+authors:
+  - family-names: Fedytskyi
+    given-names: Roman
+    email: fedytskyi@gmail.com
+repository-code: "https://github.com/RomanFedytskyi/federation-resilience"

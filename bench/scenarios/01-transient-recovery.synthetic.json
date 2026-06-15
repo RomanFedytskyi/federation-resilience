@@ -1,0 +1,19 @@
+{
+  "name": "transient-recovery",
+  "synthetic": true,
+  "_provenance": "SYNTHETIC — illustrative only. Not measured from a production remote. Replace per data/README.md.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://synthetic.invalid/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 2000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": { "baseMs": 100, "capMs": 2000, "factor": 2, "jitter": "full" }
+  },
+  "attempts": [
+    { "outcome": "fail", "latencyMs": 180 },
+    { "outcome": "fail", "latencyMs": 160 },
+    { "outcome": "succeed", "latencyMs": 140 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 120 }
+}

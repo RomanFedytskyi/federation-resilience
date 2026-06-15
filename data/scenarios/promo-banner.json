@@ -1,0 +1,31 @@
+{
+  "name": "promo-banner-flapping-no-fallback",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See promo-banner.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "promo/Banner",
+  "entryUrl": "https://cdn.shop.example/promo/remoteEntry.js",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 5,
+    "backoff": {
+      "baseMs": 100,
+      "capMs": 1500,
+      "factor": 2,
+      "jitter": "full"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "fail",
+      "latencyMs": 140
+    },
+    {
+      "outcome": "fail",
+      "latencyMs": 140
+    },
+    {
+      "outcome": "succeed",
+      "latencyMs": 120
+    }
+  ]
+}

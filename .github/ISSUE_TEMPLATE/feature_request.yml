@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please confirm your request fits the project scope first.
+        Out of scope: compliance/version gating, config services, feature-flag
+        types, audit lineage, or any "which version is a user allowed to see" logic.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What failure mode does this address?
+      description: Describe the production problem, not just the API you want.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This is generic remote-loading resilience (not compliance/version-gating).
+          required: true

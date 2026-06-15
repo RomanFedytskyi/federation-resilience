@@ -1,0 +1,18 @@
+{
+  "name": "slow-then-timeout-recovery",
+  "synthetic": true,
+  "_provenance": "SYNTHETIC — illustrative only. Not measured from a production remote. Replace per data/README.md.",
+  "remote": "search/Suggest",
+  "entryUrl": "https://synthetic.invalid/search/remoteEntry.js",
+  "fallbackId": "search-stable/Suggest",
+  "runs": 2000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": { "baseMs": 120, "capMs": 2500, "factor": 2, "jitter": "full" }
+  },
+  "attempts": [
+    { "outcome": "timeout", "latencyMs": 3000 },
+    { "outcome": "succeed", "latencyMs": 160 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 110 }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "checkout-cart-friday-peak",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See checkout-cart.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://cdn.shop.example/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": {
+      "baseMs": 120,
+      "capMs": 2000,
+      "factor": 2,
+      "jitter": "full"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "fail",
+      "latencyMs": 210
+    },
+    {
+      "outcome": "timeout",
+      "latencyMs": 3000
+    },
+    {
+      "outcome": "succeed",
+      "latencyMs": 165
+    }
+  ],
+  "fallback": {
+    "outcome": "succeed",
+    "latencyMs": 140
+  }
+}

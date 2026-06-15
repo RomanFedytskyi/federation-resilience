@@ -1,0 +1,92 @@
+{
+  "name": "federation-resilience",
+  "version": "0.1.0",
+  "description": "Resilient loader for Module Federation remotes: retry with exponential backoff, cache-busted dynamic-import recovery, deterministic fallback, idle prefetch, and telemetry hooks. Never let a single failed remote take down your shell. How to handle a failed Module Federation loadRemote.",
+  "keywords": [
+    "module-federation",
+    "micro-frontends",
+    "resilient-loader",
+    "retry",
+    "fallback",
+    "loadRemote",
+    "mfe",
+    "error-recovery",
+    "exponential-backoff",
+    "cache-bust",
+    "prefetch",
+    "module-federation-2",
+    "rspack",
+    "vite"
+  ],
+  "license": "MIT",
+  "author": "Roman Fedytskyi <fedytskyi@gmail.com>",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "bench": "tsx bench/harness.ts",
+    "bench:data": "tsx bench/harness.ts --dir ./data/scenarios --seed 1234 --pretty",
+    "validate:data": "node data/validate.mjs",
+    "prepublishOnly": "npm run typecheck && npm run build && npm test"
+  },
+  "peerDependencies": {
+    "@module-federation/enhanced": "^2.5.1",
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@module-federation/enhanced": "^2.5.1",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@vitest/coverage-v8": "^2.0.5",
+    "fast-check": "^3.20.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.2.4",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RomanFedytskyi/federation-resilience.git"
+  },
+  "homepage": "https://github.com/RomanFedytskyi/federation-resilience#readme"
+}

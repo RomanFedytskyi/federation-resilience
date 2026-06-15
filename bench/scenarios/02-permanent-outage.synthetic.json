@@ -1,0 +1,17 @@
+{
+  "name": "permanent-outage-with-fallback",
+  "synthetic": true,
+  "_provenance": "SYNTHETIC — illustrative only. Not measured from a production remote. Replace per data/README.md.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://synthetic.invalid/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 2000,
+  "config": {
+    "maxAttempts": 3,
+    "backoff": { "baseMs": 150, "capMs": 3000, "factor": 2, "jitter": "equal" }
+  },
+  "attempts": [
+    { "outcome": "fail", "latencyMs": 220 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 130 }
+}

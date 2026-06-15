@@ -1,0 +1,19 @@
+{
+  "name": "flapping-no-fallback",
+  "synthetic": true,
+  "_provenance": "SYNTHETIC — illustrative only. Not measured from a production remote. Replace per data/README.md.",
+  "remote": "promo/Banner",
+  "entryUrl": "https://synthetic.invalid/promo/remoteEntry.js",
+  "runs": 2000,
+  "config": {
+    "maxAttempts": 5,
+    "backoff": { "baseMs": 100, "capMs": 1500, "factor": 2, "jitter": "full" }
+  },
+  "attempts": [
+    { "outcome": "fail", "latencyMs": 140 },
+    { "outcome": "fail", "latencyMs": 140 },
+    { "outcome": "fail", "latencyMs": 140 },
+    { "outcome": "fail", "latencyMs": 140 },
+    { "outcome": "succeed", "latencyMs": 120 }
+  ]
+}

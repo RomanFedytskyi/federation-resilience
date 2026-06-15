@@ -1,0 +1,28 @@
+{
+  "name": "recommendations-carousel-healthy-baseline",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See recommendations-carousel.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "recommendations/Carousel",
+  "entryUrl": "https://cdn.shop.example/recommendations/remoteEntry.js",
+  "fallbackId": "recommendations-stable/Carousel",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": {
+      "baseMs": 100,
+      "capMs": 2000,
+      "factor": 2,
+      "jitter": "full"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "succeed",
+      "latencyMs": 145
+    }
+  ],
+  "fallback": {
+    "outcome": "succeed",
+    "latencyMs": 120
+  }
+}

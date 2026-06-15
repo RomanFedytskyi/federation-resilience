@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# sandbox / build temp artifacts (safe to ignore)
+.fuse_hidden*
+tsup.config.bundled_*.mjs
+*.timestamp-*.mjs

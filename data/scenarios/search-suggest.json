@@ -1,0 +1,32 @@
+{
+  "name": "search-suggest-slow-origin",
+  "synthetic": false,
+  "_provenance": "Real-data slot. See search-suggest.provenance.md for measurement source and window. Latencies shipped here are illustrative starter values — replace latencyMs with measured RUM/APM percentiles.",
+  "remote": "search/Suggest",
+  "entryUrl": "https://cdn.shop.example/search/remoteEntry.js",
+  "fallbackId": "search-stable/Suggest",
+  "runs": 5000,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": {
+      "baseMs": 100,
+      "capMs": 2500,
+      "factor": 2,
+      "jitter": "full"
+    }
+  },
+  "attempts": [
+    {
+      "outcome": "timeout",
+      "latencyMs": 3000
+    },
+    {
+      "outcome": "succeed",
+      "latencyMs": 150
+    }
+  ],
+  "fallback": {
+    "outcome": "succeed",
+    "latencyMs": 110
+  }
+}

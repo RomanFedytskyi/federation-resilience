@@ -24,12 +24,24 @@ import type {
   ResilientLoadOptions,
   RemoteId,
 } from "../types.js";
+import { RemoteLoadError } from "../types.js";
 import { resilientLoad } from "../core/resilient-loader.js";
 import { schedulePrefetch } from "../core/prefetch.js";
 import {
   applyCacheBust,
   DEFAULT_CACHE_BUST_PARAM,
 } from "../core/cache-bust.js";
+
+// ---------------------------------------------------------------------------
+// In-flight deduplication registry
+//
+// When multiple callers load the same remoteId concurrently (e.g. two React
+// components both mounting for the first time), they all share a single
+// in-flight Promise instead of spawning independent retry chains. The entry is
+// deleted as soon as the promise settles, so the next call after settlement
+// always starts a fresh load.
+// ---------------------------------------------------------------------------
+const inflight = new Map<RemoteId, Promise<unknown>>();
 
 /**
  * Per-remote "pending cache-bust" registry. The loader sets the token for a
@@ -110,6 +122,10 @@ function defaultMfLoad<T>(param: string): LoadFn<T> {
  * backoff, falls back to a pinned remote/module, and on total failure throws a
  * single typed RemoteLoadError instead of crashing the host shell.
  *
+ * Concurrent calls for the same `remoteId` are automatically deduplicated: they
+ * all share the in-flight Promise so only one retry chain runs at a time. The
+ * deduplication window closes as soon as the promise settles.
+ *
  * Prevents: a single down/slow/500 remote taking down the whole shell, and the
  * "retry forever hits the cached failure" trap from Chromium's sticky import cache.
  *
@@ -124,9 +140,74 @@ export function loadResilientRemote<T = unknown>(
   remoteId: RemoteId,
   options: ResilientLoadOptions<T> = {},
 ): Promise<T> {
+  const existing = inflight.get(remoteId) as Promise<T> | undefined;
+  if (existing) return existing;
+
   const param = options.cacheBustParam ?? DEFAULT_CACHE_BUST_PARAM;
   const load = options.load ?? defaultMfLoad<T>(param);
-  return resilientLoad<T>(remoteId, { ...options, load });
+  const promise = resilientLoad<T>(remoteId, { ...options, load }).finally(() => {
+    inflight.delete(remoteId);
+  });
+  inflight.set(remoteId, promise);
+  return promise;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-remote parallel loader
+// ---------------------------------------------------------------------------
+
+/** A single entry passed to loadResilientRemotes. */
+export interface MultiRemoteEntry<T = unknown> {
+  remoteId: RemoteId;
+  /** Per-remote options; merged with (and override) sharedOptions. */
+  options?: ResilientLoadOptions<T>;
+}
+
+/** The settled outcome for one remote. */
+export type MultiRemoteResult<T = unknown> =
+  | { remoteId: RemoteId; status: "success"; module: T }
+  | { remoteId: RemoteId; status: "error"; error: RemoteLoadError };
+
+/**
+ * Load multiple remotes concurrently with full per-remote failure isolation.
+ * One broken remote does not cancel or affect the others — like `Promise.allSettled`
+ * but with the full resilience pipeline (retry, cache-bust, fallback, telemetry)
+ * running independently per remote.
+ *
+ * `sharedOptions` acts as a base config; per-entry `options` override it.
+ *
+ * Addresses root cause #3 (serial waterfall): calling `loadResilientRemote` in
+ * sequence blocks first paint; this fires all loads in parallel.
+ *
+ * @example
+ * const results = await loadResilientRemotes([
+ *   { remoteId: "checkout/Cart", options: { fallback: "checkout-stable/Cart" } },
+ *   { remoteId: "nav/Menu",      options: { fallback: "nav-stable/Menu" } },
+ * ]);
+ * for (const r of results) {
+ *   if (r.status === "success") mount(r.remoteId, r.module);
+ *   else                        renderError(r.remoteId, r.error);
+ * }
+ */
+export function loadResilientRemotes<T = unknown>(
+  entries: MultiRemoteEntry<T>[],
+  sharedOptions: ResilientLoadOptions<T> = {},
+): Promise<MultiRemoteResult<T>[]> {
+  return Promise.all(
+    entries.map(({ remoteId, options }) => {
+      const merged: ResilientLoadOptions<T> = { ...sharedOptions, ...(options ?? {}) };
+      return loadResilientRemote<T>(remoteId, merged).then(
+        (module): MultiRemoteResult<T> => ({ remoteId, status: "success", module }),
+        (error: unknown): MultiRemoteResult<T> => ({
+          remoteId,
+          status: "error",
+          error: error instanceof RemoteLoadError
+            ? error
+            : new RemoteLoadError({ remoteId, attempts: 1, cause: error }),
+        }),
+      );
+    }),
+  );
 }
 
 /**

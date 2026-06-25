@@ -1,6 +1,6 @@
 {
   "name": "federation-resilience",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Resilient loader for Module Federation remotes: retry with exponential backoff, cache-busted dynamic-import recovery, deterministic fallback, idle prefetch, and telemetry hooks. Never let a single failed remote take down your shell. How to handle a failed Module Federation loadRemote.",
   "keywords": [
     "module-federation",
@@ -49,6 +49,16 @@
         "default": "./dist/react.cjs"
       }
     },
+    "./vue": {
+      "import": {
+        "types": "./dist/vue.d.ts",
+        "default": "./dist/vue.js"
+      },
+      "require": {
+        "types": "./dist/vue.d.cts",
+        "default": "./dist/vue.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
@@ -58,6 +68,9 @@
     "*": {
       "react": [
         "./dist/react.d.ts"
+      ],
+      "vue": [
+        "./dist/vue.d.ts"
       ]
     }
   },
@@ -75,13 +88,17 @@
   "peerDependencies": {
     "@module-federation/enhanced": "^2.5.1",
     "react": ">=17",
-    "react-dom": ">=17"
+    "react-dom": ">=17",
+    "vue": ">=3"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "vue": {
       "optional": true
     }
   },
@@ -96,7 +113,8 @@
     "tsup": "^8.2.4",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "vue": "^3.4.0"
   },
   "engines": {
     "node": ">=18"

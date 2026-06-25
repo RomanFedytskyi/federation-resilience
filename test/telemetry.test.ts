@@ -29,6 +29,7 @@ describe("safeTelemetry", () => {
         nextAttempt: 2,
         delayMs: 0,
         error: new Error("e"),
+        timedOut: false,
       }),
     ).not.toThrow();
   });

@@ -8,7 +8,12 @@
  */
 
 // Primary API
-export { loadResilientRemote, prefetchFallback } from "./adapters/vanilla.js";
+export {
+  loadResilientRemote,
+  loadResilientRemotes,
+  prefetchFallback,
+} from "./adapters/vanilla.js";
+export type { MultiRemoteEntry, MultiRemoteResult } from "./adapters/vanilla.js";
 
 // Pure building blocks (documented reference core)
 export {

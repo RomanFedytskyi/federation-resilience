@@ -1,0 +1,17 @@
+{
+  "name": "retry-skip-404",
+  "synthetic": true,
+  "_provenance": "EXAMPLE: remote immediately returns a 404 (non-retryable). retryIf returns false on a NotFoundError, skipping all remaining retries and jumping directly to the pinned fallback. Demonstrates selective retry logic.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://cdn.storefront.example/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 1,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": { "baseMs": 100, "capMs": 1000, "factor": 2, "jitter": "none" }
+  },
+  "attempts": [
+    { "outcome": "fail", "latencyMs": 80 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 130 }
+}

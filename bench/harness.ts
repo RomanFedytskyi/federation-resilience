@@ -28,6 +28,20 @@ interface AttemptSpec {
   outcome: Outcome;
   latencyMs: number;
 }
+/**
+ * Optional stochastic failure model. When present, each PRIMARY attempt draws an
+ * outcome i.i.d. from `perAttemptOutcome` (the measured RUM class mix) instead of
+ * following the fixed `attempts` script, and per-attempt latency is jittered
+ * around the per-class percentile. This injects realistic run-to-run variance
+ * (fractional mean-attempts, occasional fallback/give-up, spread recovery times).
+ */
+interface FailureModel {
+  perAttemptOutcome: { succeed: number; fail: number; timeout: number };
+  latencyMs: { succeed: number; fail: number; timeout: number };
+  latencyJitter?: number; // +/- fractional jitter, default 0.15
+  fallbackFails?: boolean; // adversarial: pinned fallback also fails
+  nativeSurvival?: number; // native loadRemote survival = P(first attempt succeeds)
+}
 interface Scenario {
   name: string;
   synthetic: boolean;
@@ -38,6 +52,22 @@ interface Scenario {
   config: { maxAttempts: number; backoff?: Partial<BackoffOptions> };
   attempts: AttemptSpec[];
   fallback?: AttemptSpec;
+  failureModel?: FailureModel;
+}
+
+/** Draw a primary-attempt outcome from the class mix using one uniform sample. */
+function drawOutcome(
+  m: { succeed: number; fail: number; timeout: number },
+  u: number,
+): Outcome {
+  if (u < m.succeed) return "succeed";
+  if (u < m.succeed + m.fail) return "fail";
+  return "timeout";
+}
+
+/** Multiplicative +/- jitter so per-attempt latencies are not all identical. */
+function jitterLatency(base: number, frac: number, u: number): number {
+  return Math.max(1, Math.round(base * (1 + (u * 2 - 1) * frac)));
 }
 
 /** Deterministic, seedable PRNG (mulberry32) for reproducible jitter. */
@@ -74,16 +104,26 @@ async function runOnce(sc: Scenario, rng: () => number): Promise<RunResult> {
     elapsed += ms;
   };
 
-  // Scripted loader: consumes the per-attempt outcome script. "timeout" is a
-  // failure that still costs its latency. Latency is added to the sim clock.
+  // Scripted loader. With a `failureModel`, each primary attempt draws an
+  // outcome i.i.d. from the measured RUM class mix and a jittered latency
+  // (realistic run-to-run variance). Without one, it falls back to the fixed
+  // per-attempt script. "timeout" is a failure that still costs its latency.
+  const fm = sc.failureModel;
+  const jit = fm?.latencyJitter ?? 0.15;
   const load = async (_id: string, ctx: { attempt: number; isFallback: boolean }) => {
     if (ctx.isFallback) {
       const fb = sc.fallback ?? { outcome: "succeed", latencyMs: 100 };
-      elapsed += fb.latencyMs;
-      if (fb.outcome === "succeed") return { module: "fallback" };
+      elapsed += jitterLatency(fb.latencyMs, jit, rng());
+      if (fm ? !fm.fallbackFails : fb.outcome === "succeed") return { module: "fallback" };
       throw new Error("fallback failed");
     }
     attemptsMade += 1;
+    if (fm) {
+      const outcome = drawOutcome(fm.perAttemptOutcome, rng());
+      elapsed += jitterLatency(fm.latencyMs[outcome], jit, rng());
+      if (outcome === "succeed") return { module: "primary" };
+      throw new Error(outcome); // "fail" | "timeout"
+    }
     const spec = sc.attempts[Math.min(ctx.attempt - 1, sc.attempts.length - 1)]!;
     elapsed += spec.latencyMs;
     if (spec.outcome === "succeed") return { module: "primary" };
@@ -132,6 +172,9 @@ async function evaluate(sc: Scenario, seed: number) {
     fallback_rate: round(fallback / n),
     giveup_rate: round(giveup / n),
     host_survival_rate: round((primary + fallback) / n), // never a crash
+    // Native loadRemote (single attempt, no retry/fallback) survives iff its one
+    // attempt succeeds; = the measured success-class share of the RUM mix.
+    native_survival_rate: round(sc.failureModel?.nativeSurvival ?? (sc.attempts[0]?.outcome === "succeed" ? 1 : 0)),
     mean_attempts: round(results.reduce((s, r) => s + r.attempts, 0) / n),
     recovery_ms: {
       p50: Math.round(percentile(recov, 50)),

@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-25
+
+### Added
+- **Per-attempt timeout** (`timeoutMs` option): a hanging load that doesn't settle
+  within the configured window is treated as a failure and retried with the
+  standard backoff schedule. `RetryEvent` now carries a `timedOut: boolean` field
+  so telemetry hooks can distinguish timeout retries from error retries.
+- **Retry predicate** (`retryIf` option): `(error, attempt) => boolean` callback
+  called after each failed attempt. Returning `false` immediately exits the retry
+  loop and jumps to the fallback (or gives up), enabling callers to skip retries on
+  definitively non-retryable errors such as 404s.
+- **In-flight deduplication**: concurrent calls to `loadResilientRemote` with the
+  same `remoteId` now share a single in-flight Promise. Only one retry chain runs;
+  all waiters receive the same settled value. The deduplication window closes when
+  the promise settles so the next call always starts a fresh load.
+- **`loadResilientRemotes(entries, sharedOptions)`**: loads multiple remotes in
+  parallel with full per-remote failure isolation (like `Promise.allSettled` but
+  with the full resilience pipeline per remote). Addresses the serial waterfall
+  root cause. Returns `Array<MultiRemoteResult>`.
+- **Vue 3 adapter** (`federation-resilience/vue`): `useResilientRemote` Composition
+  API composable. Accepts a plain string or a reactive `Ref<string>` for
+  route-driven remotes. Delivers the same `{ status, module, error }` state machine
+  as the React hook. `vue >=3` is an optional peer dependency.
+
+### Removed
+- `bench/seed_sweep.ts` and `bench/sensitivity_correlation.ts` — research scripts
+  used for the IEEE paper analysis; not referenced in any npm script and not useful
+  to package consumers. `bench/harness.ts` and the SYNTHETIC scenarios are kept.
+
 ## [0.1.0] - 2026-06-14
 
 ### Added

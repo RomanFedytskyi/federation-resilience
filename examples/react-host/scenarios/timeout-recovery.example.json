@@ -1,0 +1,19 @@
+{
+  "name": "timeout-recovery",
+  "synthetic": true,
+  "_provenance": "EXAMPLE: remote hangs on first two attempts (simulating a slow/unresponsive origin) then recovers. Demonstrates timeoutMs bounding per-attempt latency so the retry loop is not blocked indefinitely.",
+  "remote": "checkout/Cart",
+  "entryUrl": "https://cdn.storefront.example/checkout/remoteEntry.js",
+  "fallbackId": "checkout-stable/Cart",
+  "runs": 1,
+  "config": {
+    "maxAttempts": 4,
+    "backoff": { "baseMs": 100, "capMs": 1000, "factor": 2, "jitter": "none" }
+  },
+  "attempts": [
+    { "outcome": "timeout", "latencyMs": 9999 },
+    { "outcome": "timeout", "latencyMs": 9999 },
+    { "outcome": "succeed", "latencyMs": 120 }
+  ],
+  "fallback": { "outcome": "succeed", "latencyMs": 130 }
+}

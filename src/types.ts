@@ -86,6 +86,8 @@ export interface RetryEvent {
   /** Backoff delay (ms) before nextAttempt. */
   readonly delayMs: number;
   readonly error: unknown;
+  /** True when the attempt was abandoned due to a per-attempt timeout. */
+  readonly timedOut: boolean;
 }
 export interface FallbackEvent {
   readonly remoteId: RemoteId;
@@ -144,6 +146,19 @@ export interface ResilientLoadOptions<T = unknown> extends Partial<ResilientSeam
   telemetry?: TelemetryHooks;
   /** Query-param name used by the cache-buster. Default "__mf_bust". */
   cacheBustParam?: string;
+  /**
+   * Per-attempt timeout in ms. If a single load attempt does not settle within
+   * this window, it is treated as a failure and the retry loop continues.
+   * Absent or 0 means no timeout (default — existing behaviour).
+   */
+  timeoutMs?: number;
+  /**
+   * Predicate called after each failed attempt (before sleeping). Return `false`
+   * to stop retrying and jump straight to the fallback (or give up). Useful for
+   * skipping retries on errors that are definitively non-retryable (e.g. 404).
+   * Defaults to always-true (retry on every error).
+   */
+  retryIf?: (error: unknown, attempt: number) => boolean;
 }
 
 /** Options for idle fallback prefetch. */

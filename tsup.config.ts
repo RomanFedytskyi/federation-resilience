@@ -6,6 +6,7 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     react: "src/adapters/react.tsx",
+    vue:   "src/adapters/vue.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
@@ -14,7 +15,7 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   target: "es2020",
-  external: ["react", "react-dom", "@module-federation/enhanced"],
+  external: ["react", "react-dom", "vue", "@module-federation/enhanced"],
   outExtension({ format }) {
     return { js: format === "cjs" ? ".cjs" : ".js" };
   },

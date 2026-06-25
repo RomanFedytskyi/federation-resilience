@@ -2,15 +2,19 @@
 
 [![CI](https://github.com/RomanFedytskyi/federation-resilience/actions/workflows/ci.yml/badge.svg)](https://github.com/RomanFedytskyi/federation-resilience/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/federation-resilience.svg)](https://www.npmjs.com/package/federation-resilience)
+[![npm downloads](https://img.shields.io/npm/dw/federation-resilience.svg)](https://www.npmjs.com/package/federation-resilience)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/federation-resilience.svg)](https://bundlephobia.com/package/federation-resilience)
 [![types](https://img.shields.io/npm/types/federation-resilience.svg)](https://www.npmjs.com/package/federation-resilience)
-[![bundle](https://img.shields.io/badge/core-React--free-blue.svg)](#install)
+[![Node.js >=18](https://img.shields.io/node/v/federation-resilience.svg)](https://www.npmjs.com/package/federation-resilience)
+[![bundle](https://img.shields.io/badge/core-React%2FVue--free-blue.svg)](#install)
 [![license](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
 [![data](https://img.shields.io/badge/scenarios-CC--BY--4.0-orange.svg)](docs/scenario_provenance.md)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20694953-blue.svg)](https://doi.org/10.5281/zenodo.20694953)
+[![GitHub last commit](https://img.shields.io/github/last-commit/RomanFedytskyi/federation-resilience.svg)](https://github.com/RomanFedytskyi/federation-resilience)
 
 > **Never let a single failed remote take down your shell.**
 
-Retry, exponential backoff, **cache-busted** dynamic-import recovery, deterministic fallback, idle prefetch, and telemetry hooks — purpose-built for **Module Federation** remotes, framework-agnostic, with an optional React adapter.
+Retry, exponential backoff, **cache-busted** dynamic-import recovery, deterministic fallback, idle prefetch, per-attempt timeout, in-flight deduplication, and telemetry hooks — purpose-built for **Module Federation** remotes, framework-agnostic, with optional React and Vue adapters.
 
 ## How to handle a failed Module Federation remote
 
@@ -71,6 +75,8 @@ const Cart = await loadResilientRemote<CartModule>("checkout/Cart", {
 | `fallback` | `RemoteId \| (() => T \| Promise<T>)` | — | Pinned remote id or local factory used once attempts are exhausted. If omitted, a `RemoteLoadError` is thrown. |
 | `cacheBustParam` | `string` | `"__mf_bust"` | Query-param name appended by the cache-buster on retries. |
 | `telemetry` | `TelemetryHooks` | — | Lifecycle hooks (see below). |
+| `timeoutMs` | `number` | — | Per-attempt timeout in ms. A hanging load that doesn't settle within this window is treated as a failure and retried. Absent or `0` means no timeout. |
+| `retryIf` | `(error, attempt) => boolean` | — | Predicate called after each failed attempt. Return `false` to skip remaining retries and jump directly to the fallback (or give up). Useful for definitively non-retryable errors such as 404s. |
 
 ### Telemetry hooks
 
@@ -87,7 +93,7 @@ All hooks are optional and observability-only — they never alter control flow,
 | Event | Fields |
 | --- | --- |
 | `AttemptEvent` | `{ remoteId, attempt, maxAttempts }` |
-| `RetryEvent` | `{ remoteId, attempt, nextAttempt, delayMs, error }` |
+| `RetryEvent` | `{ remoteId, attempt, nextAttempt, delayMs, error, timedOut }` |
 | `FallbackEvent` | `{ remoteId, attemptsMade, fallbackKind: "remote" \| "module", error }` |
 | `SuccessEvent` | `{ remoteId, attempt, viaFallback }` |
 | `GiveUpEvent` | `{ remoteId, attemptsMade, error }` — `error` is a typed `RemoteLoadError` |
@@ -153,19 +159,34 @@ const Cart = lazyRemote<{ default: React.ComponentType }>("checkout/Cart", {
 
 ### Vue
 
-```ts
-import { ref, onMounted, shallowRef } from "vue";
-import { loadResilientRemote } from "federation-resilience";
+A first-class Vue 3 composable ships from the optional subpath `federation-resilience/vue` with `vue` as an optional peer dependency.
 
-export function useRemote(id: string) {
-  const mod = shallowRef<unknown>(null);
-  const failed = ref(false);
-  onMounted(async () => {
-    try { mod.value = await loadResilientRemote(id, { fallback: `${id}-stable` }); }
-    catch { failed.value = true; } // RemoteLoadError — render a placeholder
-  });
-  return { mod, failed };
-}
+```vue
+<script setup lang="ts">
+import { useResilientRemote } from "federation-resilience/vue";
+
+const state = useResilientRemote("checkout/Cart", {
+  fallback: "checkout-stable/Cart",
+});
+// state.value.status === "loading" | "success" | "error"
+</script>
+
+<template>
+  <Spinner v-if="state.status === 'loading'" />
+  <CartUnavailable v-else-if="state.status === 'error'" :reason="state.error.message" />
+  <component v-else :is="state.module.default" />
+</template>
+```
+
+The `remote` argument can be a reactive `Ref<string>` — the composable re-fires whenever it changes (e.g. route-driven remotes):
+
+```ts
+import { ref } from "vue";
+import { useResilientRemote } from "federation-resilience/vue";
+
+const currentRemote = ref("checkout/Cart");
+const state = useResilientRemote(currentRemote, { fallback: "checkout-stable/Cart" });
+// Changing currentRemote.value triggers a new resilient load automatically.
 ```
 
 ### Angular
@@ -198,6 +219,25 @@ async loadWidget() {
 {:catch}
   <LocalMenuFallback />
 {/await}
+```
+
+### Parallel multi-remote load
+
+Load multiple remotes at once with full per-remote failure isolation — one broken remote never blocks or cancels the others:
+
+```ts
+import { loadResilientRemotes } from "federation-resilience";
+
+const results = await loadResilientRemotes([
+  { remoteId: "checkout/Cart",  options: { fallback: "checkout-stable/Cart" } },
+  { remoteId: "nav/Menu",       options: { fallback: "nav-stable/Menu" } },
+  { remoteId: "promo/Banner",   options: { maxAttempts: 2 } },
+], { maxAttempts: 3, backoff: { baseMs: 100, capMs: 2000 } }); // shared defaults
+
+for (const r of results) {
+  if (r.status === "success") mount(r.remoteId, r.module);
+  else                        renderFallbackUI(r.remoteId, r.error);
+}
 ```
 
 ### Bare ESM (no framework)
@@ -294,7 +334,7 @@ This is **generic resilience only**: retry, backoff, cache-bust, deterministic f
 
 ## API surface
 
-`loadResilientRemote(remoteId, options)` · `prefetchFallback(remoteId, options)` · `RemoteLoadError` · the five `check*` property functions · reference-core building blocks (`baseDelay`, `computeDelay`, `applyCacheBust`, `mintCacheBust`, `resolveFallback`, `schedulePrefetch`, `resilientLoad`, `safeTelemetry`). React subpath: `ResilientRemote`, `useResilientRemote`. All types live in one canonical module.
+`loadResilientRemote(remoteId, options)` · `loadResilientRemotes(entries, sharedOptions)` · `prefetchFallback(remoteId, options)` · `RemoteLoadError` · the five `check*` property functions · reference-core building blocks (`baseDelay`, `computeDelay`, `applyCacheBust`, `mintCacheBust`, `resolveFallback`, `schedulePrefetch`, `resilientLoad`, `safeTelemetry`). React subpath: `ResilientRemote`, `useResilientRemote`, `lazyRemote`. Vue subpath: `useResilientRemote` (Composition API composable). All types live in one canonical module.
 
 ## Citation
 
